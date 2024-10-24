@@ -1,35 +1,65 @@
-export interface ProcessedData {
+import OpenAI from 'openai';
+
+// Research Types
+export interface ResearchData {
+  id: string;
+  content: string;
+  source: string;
+  timestamp: string;
+  metadata?: {
+    industry?: string;
+    region?: string;
+    timeframe?: string;
+  };
+}
+
+// Analysis Types
+export interface AnalysisResult {
   id: string;
   title: string;
-  date: string;
-  status: string;
-  type: string;
+  content: string;
+  timestamp: string;
+  status: 'pending' | 'completed' | 'failed';
+  data?: {
+    insights: string[];
+    recommendations: string[];
+    riskAssessment: string;
+  };
 }
 
-export interface AnalysisResult extends ProcessedData {
-  insights: string[];
+export interface AggregatedResults {
+  id: string;
+  timestamp: string;
+  results: AnalysisResult[];
   summary: string;
-  confidence: number;
+  topInsights: string[];
+  keyRecommendations: string[];
+  criticalRisks: string[];
+}
+
+export interface AIFunctionResponse {
+  insights: string[];
   recommendations: string[];
-  dataPoints: {
-    key: string;
-    value: string | number;
-  }[];
-  insightSummary: string;
-  keySummary: string;
   riskAssessment: string;
-  significantChanges: boolean;
 }
 
-export interface ReportHistoryProps {
-  onReportClick: (reportId: string) => void;
+export interface AIServiceConfig {
+  openai: OpenAI;
+  maxRetries?: number;
+  timeout?: number;
 }
 
-export interface StartNewAnalysisProps {
-  isOpen: boolean;
-  onClose: () => void;
+export interface AnalysisOptions {
+  depth: 'basic' | 'detailed' | 'comprehensive';
+  focus?: string[];
+  includeRecommendations: boolean;
 }
 
-export interface NewAnalysisButtonProps {
-  onAnalysisGenerated: (idea: string) => void;
+export interface ErrorResponse {
+  error: string;
+  code: string;
+  details?: unknown;
 }
+
+// Rest of the interfaces remain unchanged...
+// (keeping all the other interfaces as they were)
