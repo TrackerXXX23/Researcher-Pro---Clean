@@ -1,61 +1,55 @@
-'use client';
-
-import React from 'react';
-import { Input } from '../ui/input';
-import { Card } from '../ui/card';
+import React, { useState } from 'react';
+import { StartNewAnalysis } from './StartNewAnalysis';
 import { AnalysisProcess } from './AnalysisProcess';
 import { LiveUpdates } from './LiveUpdates';
-import { GeneratedReports } from './GeneratedReports';
-import { StartNewAnalysis } from './StartNewAnalysis';
-import { useToast } from '../ui/use-toast';
-import { Button } from '../ui/button';
+import { Card } from '../ui/card';
 
-export function Dashboard() {
-  const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = React.useState('');
+export const Dashboard: React.FC = () => {
+  const [currentAnalysisId, setCurrentAnalysisId] = useState<string | null>(null);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+  const handleAnalysisStart = (analysisId: string) => {
+    console.log('Starting analysis with ID:', analysisId);
+    setCurrentAnalysisId(analysisId);
   };
 
-  const handleAnalysisStart = (topic: string) => {
-    // Handle starting new analysis here
-    toast({
-      title: "Analysis Started",
-      description: `Starting analysis for topic: ${topic}`,
-    });
+  const handleAnalysisComplete = () => {
+    console.log('Analysis completed');
+    setCurrentAnalysisId(null);
+  };
+
+  const handleAnalysisError = (error: Error) => {
+    console.error('Analysis error:', error);
+    setCurrentAnalysisId(null);
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-4">Research Dashboard</h1>
-        <div className="max-w-md">
-          <Input
-            type="text"
-            placeholder="Search analyses..."
-            value={searchQuery}
-            onChange={handleSearch}
-          />
+    <div className="container mx-auto p-4 space-y-4">
+      <h1 className="text-2xl font-bold mb-6">Research Dashboard</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <StartNewAnalysis onAnalysisStart={handleAnalysisStart} />
+        </div>
+        
+        <div>
+          {currentAnalysisId && (
+            <Card className="p-4">
+              <h2 className="text-xl font-semibold mb-4">Current Analysis</h2>
+              <AnalysisProcess
+                analysisId={currentAnalysisId}
+                onComplete={handleAnalysisComplete}
+                onError={handleAnalysisError}
+              />
+            </Card>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Current Analysis</h2>
-          <AnalysisProcess />
-          <LiveUpdates />
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Generated Reports</h2>
-          <GeneratedReports searchQuery={searchQuery} />
-        </Card>
-      </div>
-
-      <div className="mt-6">
-        <StartNewAnalysis onAnalysisStart={handleAnalysisStart} />
+      <div className="mt-8">
+        {currentAnalysisId && (
+          <LiveUpdates analysisId={currentAnalysisId} />
+        )}
       </div>
     </div>
   );
-}
+};

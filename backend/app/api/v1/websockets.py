@@ -1,68 +1,117 @@
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from typing import Dict, List
-from fastapi import WebSocket, WebSocketDisconnect
-from jose import JWTError
-from app.core.security import verify_token
+import logging
+import json
+from starlette.websockets import WebSocketState
+
+logger = logging.getLogger(__name__)
 
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, List[WebSocket]] = {}
 
-    async def connect(self, websocket: WebSocket, user_id: str):
-        await websocket.accept()
-        if user_id not in self.active_connections:
-            self.active_connections[user_id] = []
-        self.active_connections[user_id].append(websocket)
+    async def connect(self, websocket: WebSocket, analysis_id: str):
+        try:
+            # Accept all connections during development
+            await websocket.accept()
+            if analysis_id not in self.active_connections:
+                self.active_connections[analysis_id] = []
+            self.active_connections[analysis_id].append(websocket)
+            logger.info(f"Client connected to analysis {analysis_id}")
 
-    def disconnect(self, websocket: WebSocket, user_id: str):
-        if user_id in self.active_connections:
-            self.active_connections[user_id].remove(websocket)
-            if not self.active_connections[user_id]:
-                del self.active_connections[user_id]
+            # Send initial status
+            await websocket.send_json({
+                "type": "connection_status",
+                "data": {
+                    "status": "connected",
+                    "analysisId": analysis_id
+                }
+            })
+            return True
+        except Exception as e:
+            logger.error(f"Error connecting websocket: {str(e)}")
+            return False
 
-    async def send_personal_message(self, message: dict, user_id: str):
-        if user_id in self.active_connections:
-            for connection in self.active_connections[user_id]:
-                await connection.send_json(message)
+    def disconnect(self, websocket: WebSocket, analysis_id: str):
+        try:
+            if analysis_id in self.active_connections:
+                self.active_connections[analysis_id].remove(websocket)
+                if not self.active_connections[analysis_id]:
+                    del self.active_connections[analysis_id]
+                logger.info(f"Client disconnected from analysis {analysis_id}")
+        except Exception as e:
+            logger.error(f"Error disconnecting websocket: {str(e)}")
+
+    async def broadcast_to_analysis(self, analysis_id: str, message: dict):
+        if analysis_id in self.active_connections:
+            disconnected = []
+            for connection in self.active_connections[analysis_id]:
+                try:
+                    await connection.send_json(message)
+                except Exception as e:
+                    logger.error(f"Error broadcasting to client: {str(e)}")
+                    disconnected.append(connection)
+            
+            for connection in disconnected:
+                self.disconnect(connection, analysis_id)
 
 manager = ConnectionManager()
 
-async def notify_analysis_update(user_id: str, analysis_id: str, status: str, progress: float = None):
-    message = {
-        "type": "analysis_update",
-        "analysis_id": analysis_id,
-        "status": status
-    }
-    if progress is not None:
-        message["progress"] = progress
-    await manager.send_personal_message(message, user_id)
-
-async def websocket_auth(websocket: WebSocket) -> str:
-    try:
-        token = websocket.headers.get("Authorization")
-        if not token or not token.startswith("Bearer "):
-            await websocket.close(code=4001, reason="Invalid authentication")
-            return None
+def setup_websockets(app: FastAPI) -> FastAPI:
+    @app.websocket("/ws/{analysis_id}")
+    async def websocket_endpoint(websocket: WebSocket, analysis_id: str):
+        logger.info(f"WebSocket connection attempt for analysis {analysis_id}")
         
-        token = token.split(" ")[1]
-        user_id = verify_token(token)
-        if not user_id:
-            await websocket.close(code=4001, reason="Invalid token")
-            return None
+        # Log headers for debugging
+        logger.info(f"WebSocket headers: {websocket.headers}")
         
-        return user_id
-    except (JWTError, IndexError):
-        await websocket.close(code=4001, reason="Invalid authentication")
-        return None
+        if not analysis_id:
+            logger.error("Analysis ID is required")
+            if websocket.client_state != WebSocketState.DISCONNECTED:
+                await websocket.close(code=1000)
+            return
 
-async def websocket_endpoint(websocket: WebSocket):
-    user_id = await websocket_auth(websocket)
-    if not user_id:
-        return
+        try:
+            # Accept the connection first
+            await websocket.accept()
+            logger.info(f"WebSocket connection accepted for analysis {analysis_id}")
 
-    try:
-        await manager.connect(websocket, user_id)
-        while True:
-            data = await websocket.receive_text()
-            # Handle incoming messages if needed
-    except WebSocketDisconnect:
-        manager.disconnect(websocket, user_id)
+            # Then set up the connection in the manager
+            connected = await manager.connect(websocket, analysis_id)
+            if not connected:
+                logger.error("Failed to set up websocket connection in manager")
+                if websocket.client_state != WebSocketState.DISCONNECTED:
+                    await websocket.close(code=1011)
+                return
+
+            while True:
+                try:
+                    data = await websocket.receive_text()
+                    message = json.loads(data)
+                    await manager.broadcast_to_analysis(analysis_id, message)
+                except json.JSONDecodeError:
+                    logger.error(f"Invalid JSON received: {data}")
+                except WebSocketDisconnect:
+                    manager.disconnect(websocket, analysis_id)
+                    break
+                except Exception as e:
+                    logger.error(f"WebSocket error: {str(e)}")
+                    manager.disconnect(websocket, analysis_id)
+                    break
+        except WebSocketDisconnect:
+            logger.info(f"WebSocket disconnected for analysis {analysis_id}")
+            manager.disconnect(websocket, analysis_id)
+        except Exception as e:
+            logger.error(f"WebSocket error: {str(e)}")
+            manager.disconnect(websocket, analysis_id)
+            if websocket.client_state != WebSocketState.DISCONNECTED:
+                try:
+                    await websocket.close(code=1011)
+                except:
+                    pass
+
+    @app.get("/ws/health")
+    async def websocket_health():
+        return {"status": "healthy"}
+
+    return app
