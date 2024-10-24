@@ -1,96 +1,184 @@
-import type { ResearchData } from '@/utils/dataProcessing';
-
-export interface AnalysisResult {
-  id: string;
-  data: ResearchData;
-  insights: string[];
-  confidence: number;
-  recommendations: string[];
-  risks: string[];
-  timestamp: Date;
-}
+import OpenAI from 'openai';
+import {
+  ResearchData,
+  AnalysisResult,
+  AggregatedResults,
+  AIFunctionResponse,
+  AIServiceConfig
+} from '../interfaces';
 
 export class AIAnalysisService {
-  private generateInsights(data: ResearchData): string[] {
-    const insights = [
-      `Strong market potential identified in ${data.metadata?.region}`,
-      `Key growth opportunities in ${data.metadata?.industry} sector`,
-      'Emerging technological trends affecting market dynamics',
-      'Shifting consumer preferences impacting demand',
-      'Regulatory changes influencing market structure'
-    ];
+  private openai: OpenAI;
+  private maxRetries: number;
+  private timeout: number;
 
-    // Return 2-3 random insights
-    return insights
-      .sort(() => Math.random() - 0.5)
-      .slice(0, Math.floor(Math.random() * 2) + 2);
+  constructor(config: AIServiceConfig) {
+    this.openai = config.openai;
+    this.maxRetries = config.maxRetries || 3;
+    this.timeout = config.timeout || 30000;
   }
 
-  private generateRecommendations(data: ResearchData): string[] {
-    const recommendations = [
-      'Invest in digital transformation initiatives',
-      'Expand market presence in emerging regions',
-      'Develop strategic partnerships',
-      'Focus on sustainable practices',
-      'Enhance customer experience capabilities'
-    ];
-
-    // Return 2-3 random recommendations
-    return recommendations
-      .sort(() => Math.random() - 0.5)
-      .slice(0, Math.floor(Math.random() * 2) + 2);
+  public async analyzeData(data: ResearchData): Promise<AnalysisResult> {
+    try {
+      const aiResponse = await this.callOpenAIWithFunctions(data);
+      
+      return {
+        id: `analysis-${data.id}`,
+        title: `Analysis of ${data.metadata?.industry || 'Industry'} in ${data.metadata?.region || 'Region'}`,
+        content: data.content,
+        timestamp: new Date().toISOString(),
+        status: 'completed',
+        data: {
+          insights: aiResponse.insights,
+          recommendations: aiResponse.recommendations,
+          riskAssessment: aiResponse.riskAssessment
+        }
+      };
+    } catch (error) {
+      return {
+        id: `analysis-${data.id}`,
+        title: `Failed Analysis of ${data.source}`,
+        content: data.content,
+        timestamp: new Date().toISOString(),
+        status: 'failed',
+        data: {
+          insights: [],
+          recommendations: [],
+          riskAssessment: `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }
+      };
+    }
   }
 
-  private generateRisks(data: ResearchData): string[] {
-    const risks = [
-      'Market volatility',
-      'Regulatory compliance challenges',
-      'Competitive pressure',
-      'Technology disruption',
-      'Supply chain vulnerabilities'
-    ];
+  public async aggregateResults(results: AnalysisResult[]): Promise<AggregatedResults> {
+    if (!results.length) {
+      throw new Error('Failed to aggregate analysis results: No results provided');
+    }
 
-    // Return 1-2 random risks
-    return risks
-      .sort(() => Math.random() - 0.5)
-      .slice(0, Math.floor(Math.random() * 2) + 1);
+    try {
+      const summary = await this.generateSummary(results);
+      const topInsights = this.extractTopInsights(results);
+      const keyRecommendations = this.extractKeyRecommendations(results);
+      const criticalRisks = this.extractCriticalRisks(results);
+
+      return {
+        id: `aggregated-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        results,
+        summary,
+        topInsights,
+        keyRecommendations,
+        criticalRisks
+      };
+    } catch (error) {
+      throw new Error(`Failed to aggregate results: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
-  async analyzeData(data: ResearchData): Promise<AnalysisResult> {
-    // Simulate AI analysis delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+  protected async callOpenAIWithFunctions(data: ResearchData): Promise<AIFunctionResponse> {
+    let retries = 0;
+    
+    while (retries < this.maxRetries) {
+      try {
+        const response = await this.openai.chat.completions.create({
+          model: "gpt-4",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert industry analyst. Analyze the provided research data and provide insights, recommendations, and risk assessment."
+            },
+            {
+              role: "user",
+              content: `Analyze this research data: ${data.content}`
+            }
+          ],
+          functions: [
+            {
+              name: "provide_analysis",
+              parameters: {
+                type: "object",
+                properties: {
+                  insights: {
+                    type: "array",
+                    items: { type: "string" }
+                  },
+                  recommendations: {
+                    type: "array",
+                    items: { type: "string" }
+                  },
+                  riskAssessment: { type: "string" }
+                },
+                required: ["insights", "recommendations", "riskAssessment"]
+              }
+            }
+          ],
+          function_call: { name: "provide_analysis" }
+        });
 
-    return {
-      id: `analysis-${data.id}`,
-      data,
-      insights: this.generateInsights(data),
-      recommendations: this.generateRecommendations(data),
-      risks: this.generateRisks(data),
-      confidence: Math.random() * 0.2 + 0.8, // 80-100% confidence
-      timestamp: new Date()
-    };
+        const functionCall = response.choices[0]?.message?.function_call;
+        
+        if (functionCall && functionCall.arguments) {
+          return JSON.parse(functionCall.arguments) as AIFunctionResponse;
+        }
+        
+        throw new Error('Invalid response format from OpenAI');
+      } catch (error) {
+        retries++;
+        if (retries === this.maxRetries) {
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+      }
+    }
+    
+    throw new Error('Max retries exceeded');
   }
 
-  async aggregateResults(results: AnalysisResult[]): Promise<{
-    summary: string;
-    topInsights: string[];
-    keyRecommendations: string[];
-    criticalRisks: string[];
-  }> {
-    // Simulate aggregation delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+  private async generateSummary(results: AnalysisResult[]): Promise<string> {
+    try {
+      const response = await this.openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: "Generate a concise summary of the analysis results."
+          },
+          {
+            role: "user",
+            content: JSON.stringify(results.map(r => ({
+              title: r.title,
+              insights: r.data?.insights,
+              recommendations: r.data?.recommendations,
+              riskAssessment: r.data?.riskAssessment
+            })))
+          }
+        ]
+      });
 
-    const allInsights = results.flatMap(r => r.insights);
-    const allRecommendations = results.flatMap(r => r.recommendations);
-    const allRisks = results.flatMap(r => r.risks);
+      return response.choices[0]?.message?.content || 'Failed to generate summary';
+    } catch (error) {
+      throw new Error(`Failed to generate summary: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 
-    return {
-      summary: `Analysis completed for ${results.length} data points with an average confidence of ${
-        results.reduce((acc, r) => acc + r.confidence, 0) / results.length * 100
-      }%.`,
-      topInsights: [...new Set(allInsights)].slice(0, 3),
-      keyRecommendations: [...new Set(allRecommendations)].slice(0, 3),
-      criticalRisks: [...new Set(allRisks)].slice(0, 2)
-    };
+  private extractTopInsights(results: AnalysisResult[]): string[] {
+    return results
+      .flatMap(r => r.data?.insights || [])
+      .filter((insight, index, self) => self.indexOf(insight) === index)
+      .slice(0, 5);
+  }
+
+  private extractKeyRecommendations(results: AnalysisResult[]): string[] {
+    return results
+      .flatMap(r => r.data?.recommendations || [])
+      .filter((rec, index, self) => self.indexOf(rec) === index)
+      .slice(0, 5);
+  }
+
+  private extractCriticalRisks(results: AnalysisResult[]): string[] {
+    return results
+      .map(r => r.data?.riskAssessment || '')
+      .filter(risk => risk && !risk.includes('Analysis failed'))
+      .slice(0, 3);
   }
 }

@@ -1,45 +1,44 @@
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
+import { ProcessUpdate, LiveUpdate } from '@/types/socket';
 
-export const socket = io({
-  path: '/api/socketio',
-  autoConnect: true,
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-});
+let socket: Socket | null = null;
 
-socket.on('connect', () => {
-  console.log('Socket connected:', socket.id);
-});
+export const initializeSocket = () => {
+  if (!socket) {
+    socket = io({
+      path: '/api/socketio',
+      addTrailingSlash: false,
+    });
 
-socket.on('disconnect', () => {
-  console.log('Socket disconnected');
-});
+    socket.on('connect', () => {
+      console.log('Socket connected:', socket?.id);
+    });
 
-socket.on('error', (error: Error) => {
-  console.error('Socket error:', error);
-});
+    socket.on('disconnect', () => {
+      console.log('Socket disconnected');
+    });
 
-export type ProcessUpdate = {
-  stepId: string;
-  status: 'pending' | 'running' | 'completed' | 'error';
-  progress: number;
-  details?: string;
-  processStatus?: 'idle' | 'running' | 'completed' | 'error';
-  error?: string;
+    socket.on('error', (error: Error) => {
+      console.error('Socket error:', error);
+    });
+  }
+
+  return socket;
 };
 
-export type LiveUpdate = {
-  id: string;
-  timestamp: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+export const getSocket = () => {
+  if (!socket) {
+    return initializeSocket();
+  }
+  return socket;
 };
 
 export const subscribeToUpdates = (
   onProcessUpdate: (update: ProcessUpdate) => void,
   onLiveUpdate: (update: LiveUpdate) => void
 ) => {
+  const socket = getSocket();
+
   socket.on('processUpdate', onProcessUpdate);
   socket.on('liveUpdate', onLiveUpdate);
 
@@ -48,3 +47,6 @@ export const subscribeToUpdates = (
     socket.off('liveUpdate', onLiveUpdate);
   };
 };
+
+// Initialize socket connection
+initializeSocket();
