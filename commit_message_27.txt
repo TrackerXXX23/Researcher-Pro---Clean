@@ -1,0 +1,22 @@
+feat(test): Add Cypress and Next.js type definitions
+
+This commit adds Cypress testing and Next.js types:
+
+Components:
+1. Cypress:
+   - Test configuration
+   - E2E test setup
+   - Test utilities
+
+2. Next.js Types:
+   - Environment types
+   - Type declarations
+   - Configuration types
+
+Technical Details:
+- Cypress setup
+- E2E testing
+- Type definitions
+- Environment config
+
+Related to previous commits: Adds E2E testing infrastructure
