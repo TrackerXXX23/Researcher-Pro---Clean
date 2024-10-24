@@ -1,15 +1,42 @@
-import { Server as NetServer, Socket } from 'net';
-import { NextApiResponse } from 'next';
-import { Server as SocketIOServer } from 'socket.io';
+import { Server as HTTPServer } from 'http';
+import { Socket } from 'net';
+import { Server as WSServer } from 'ws';
 
-export interface SocketServer extends NetServer {
-  io?: SocketIOServer;
+declare global {
+  namespace NodeJS {
+    interface Process {
+      browser: boolean;
+    }
+  }
 }
 
-export interface SocketWithIO extends Socket {
-  server: SocketServer;
+declare module 'http' {
+  interface IncomingMessage {
+    socket: Socket & {
+      server: HTTPServer & {
+        ws?: boolean;
+        wsServer?: WSServer;
+      };
+    };
+  }
 }
 
-export interface NextApiResponseWithSocket extends NextApiResponse {
-  socket: SocketWithIO;
+export interface WebSocketMessage {
+  type: 'start_analysis' | 'request_update' | 'connected' | 'error';
+  id?: string;
+  token?: string;
+  message?: string;
+  data?: any;
+}
+
+export interface WebSocketError {
+  id: string;
+  error: Error;
+}
+
+export interface WebSocketEventMap {
+  analysisStarted: { id: string; [key: string]: any };
+  updateRequested: { id: string; [key: string]: any };
+  clientDisconnected: string;
+  clientError: WebSocketError;
 }

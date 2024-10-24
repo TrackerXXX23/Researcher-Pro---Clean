@@ -1,6 +1,11 @@
-/// <reference types="next" />
-/// <reference types="next/types/global" />
-/// <reference types="next/image-types/global" />
+import { Server as NetServer, Socket } from 'net';
+import { Server as SocketIOServer } from 'socket.io';
+import { NextApiResponse } from 'next';
 
-// NOTE: This file should not be edited
-// see https://nextjs.org/docs/basic-features/typescript for more information.
+export type NextApiResponseServerIO = NextApiResponse & {
+  socket: Socket & {
+    server: NetServer & {
+      io: SocketIOServer;
+    };
+  };
+};
