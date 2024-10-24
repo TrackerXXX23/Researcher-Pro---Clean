@@ -1,53 +1,50 @@
-import { Search } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
-import AnalysisProcess from './AnalysisProcess'
-import LiveUpdates from './LiveUpdates'
-import GeneratedReports from './GeneratedReports'
+'use client';
 
-export default function Dashboard() {
+import React from 'react';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { AnalysisProcess } from './AnalysisProcess';
+import { LiveUpdates } from './LiveUpdates';
+import { GeneratedReports } from './GeneratedReports';
+import { StartNewAnalysis } from './StartNewAnalysis';
+import { useToast } from '@/components/ui/use-toast';
+
+export function Dashboard() {
+  const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = React.useState('');
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* Header with gradient */}
-      <header className="bg-gradient-to-r from-purple-600 to-cyan-500 p-6">
-        <div className="container mx-auto">
-          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-4">Research Dashboard</h1>
+        <div className="max-w-md">
+          <Input
+            type="text"
+            placeholder="Search analyses..."
+            value={searchQuery}
+            onChange={handleSearch}
+          />
         </div>
-      </header>
+      </div>
 
-      <main className="container mx-auto flex-1 space-y-6 p-6">
-        {/* Search and New Analysis */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-            <Input
-              placeholder="Search analyses..."
-              className="pl-9"
-            />
-          </div>
-          <Button size="lg">
-            New Analysis
-          </Button>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Analysis Process */}
-          <Card className="p-6">
-            <AnalysisProcess />
-          </Card>
-
-          {/* Live Updates */}
-          <Card className="p-6">
-            <LiveUpdates />
-          </Card>
-        </div>
-
-        {/* Generated Reports */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-6">
-          <GeneratedReports />
+          <h2 className="text-xl font-semibold mb-4">Current Analysis</h2>
+          <AnalysisProcess />
+          <LiveUpdates />
         </Card>
-      </main>
+
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Generated Reports</h2>
+          <GeneratedReports searchQuery={searchQuery} />
+        </Card>
+      </div>
+
+      <StartNewAnalysis />
     </div>
-  )
+  );
 }

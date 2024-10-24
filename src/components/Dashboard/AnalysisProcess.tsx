@@ -1,106 +1,151 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { socket, subscribeToUpdates, type ProcessUpdate } from '@/lib/socket';
+import React from 'react';
+import { Card } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { ProcessUpdate, ProcessStep, getStatusColor } from '../../types/analysis';
+import { authService } from '../../services/authService';
+import { useWebSocket, WebSocketMessage } from '../../services/websocketService';
 
-interface ProcessStep {
-  id: string;
-  name: string;
-  status: 'pending' | 'running' | 'completed' | 'error';
-  progress: number;
-  details?: string;
+const defaultSteps: ProcessStep[] = [
+  {
+    id: 'data-collection',
+    label: 'Data Collection',
+    status: 'pending',
+    progress: 0,
+  },
+  {
+    id: 'processing',
+    label: 'Processing',
+    status: 'pending',
+    progress: 0,
+  },
+  {
+    id: 'ai-analysis',
+    label: 'AI Analysis',
+    status: 'pending',
+    progress: 0,
+  },
+  {
+    id: 'report-creation',
+    label: 'Report Creation',
+    status: 'pending',
+    progress: 0,
+  },
+];
+
+interface AnalysisProcessProps {
+  analysisId?: number;
+  onComplete?: () => void;
+  onError?: (error: Error) => void;
 }
 
-export const AnalysisProcess: React.FC = () => {
-  const [steps, setSteps] = React.useState<ProcessStep[]>([
-    { id: 'data-collection', name: 'Data Collection', status: 'pending', progress: 0 },
-    { id: 'processing', name: 'Processing', status: 'pending', progress: 0 },
-    { id: 'ai-analysis', name: 'AI Analysis', status: 'pending', progress: 0 },
-    { id: 'report-creation', name: 'Report Creation', status: 'pending', progress: 0 }
-  ]);
+export const AnalysisProcess: React.FC<AnalysisProcessProps> = ({
+  analysisId,
+  onComplete,
+  onError,
+}) => {
+  const [steps, setSteps] = React.useState<ProcessStep[]>(defaultSteps);
+  const { connect, disconnect, addMessageHandler, connectionState } = useWebSocket();
 
-  const [status, setStatus] = React.useState<'idle' | 'running' | 'paused'>('idle');
-  const [processId, setProcessId] = React.useState<string | null>(null);
-
-  useEffect(() => {
-    const handleProcessUpdate = (update: ProcessUpdate) => {
-      console.log('Process update received:', update);
-      
-      if (update.processStatus) {
-        setStatus(update.processStatus === 'running' ? 'running' : 'idle');
-      }
-
-      if (update.stepId) {
-        setSteps(prevSteps => prevSteps.map(step => 
-          step.id === update.stepId 
-            ? { 
-                ...step, 
-                status: update.status,
-                progress: update.progress,
-                details: update.details 
-              }
-            : step
-        ));
-      }
-    };
-
-    const cleanup = subscribeToUpdates(
-      handleProcessUpdate,
-      () => {}
-    );
-
-    return () => {
-      cleanup();
-    };
-  }, []);
-
-  const handleStart = async () => {
-    try {
-      const response = await fetch('/api/start-process', {
-        method: 'POST'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to start process');
-      }
-
-      const data = await response.json();
-      setProcessId(data.processId);
-      setStatus('running');
-      
-      setSteps(steps => steps.map(step => ({
-        ...step,
-        status: 'pending',
-        progress: 0,
-        details: undefined
-      })));
-    } catch (error) {
-      console.error('Error starting process:', error);
-      setStatus('idle');
+  React.useEffect(() => {
+    const user = authService.getUser();
+    if (!user) {
+      console.error('No user found');
+      onError?.(new Error('Authentication required'));
+      return;
     }
-  };
+
+    // Debug: Log connection attempt
+    console.log('AnalysisProcess: Connecting to WebSocket:', {
+      userId: user.id,
+      analysisId,
+    });
+
+    const handleMessage = (message: WebSocketMessage) => {
+      console.log('AnalysisProcess: Received message:', message);
+
+      if (message.type === 'processUpdate') {
+        const update = message.payload as ProcessUpdate;
+        setSteps((currentSteps) =>
+          currentSteps.map((step) =>
+            step.id === update.stepId
+              ? {
+                  ...step,
+                  status: update.status,
+                  progress: update.progress,
+                  details: update.details,
+                  error: update.error,
+                }
+              : step
+          )
+        );
+
+        // Check if all steps are completed
+        if (update.processStatus === 'completed') {
+          onComplete?.();
+        } else if (update.processStatus === 'error') {
+          onError?.(new Error(update.error || 'Analysis process failed'));
+        }
+      }
+    };
+
+    // Connect to WebSocket
+    connect();
+    const cleanup = addMessageHandler(handleMessage);
+
+    // Cleanup
+    return () => {
+      console.log('AnalysisProcess: Cleaning up WebSocket connection');
+      cleanup();
+      disconnect();
+    };
+  }, [analysisId, onComplete, onError, connect, disconnect, addMessageHandler]);
+
+  if (connectionState !== 'connected') {
+    return (
+      <div className="text-center py-4">
+        <p className="text-gray-500">
+          {connectionState === 'connecting'
+            ? 'Connecting to analysis process...'
+            : 'Disconnected from analysis process'}
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="section-header">Analysis Process</div>
-      
-      <button 
-        onClick={handleStart}
-        className="mb-4"
-      >
-        Start Process
-      </button>
-
-      <div className="space-y-4">
-        {steps.map((step) => (
-          <div key={step.id} className="process-step">
-            <div className="process-step-name">{step.name}</div>
-            <div className="process-step-status">{step.status}</div>
+    <div className="space-y-4">
+      {steps.map((step) => (
+        <Card key={step.id} className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium">{step.label}</h3>
+              {step.details && (
+                <p className="text-sm text-gray-500">{step.details}</p>
+              )}
+              {step.error && (
+                <p className="text-sm text-red-500 mt-1">{step.error}</p>
+              )}
+            </div>
+            <Badge className={getStatusColor(step.status)}>
+              {step.status.charAt(0).toUpperCase() + step.status.slice(1)}
+            </Badge>
           </div>
-        ))}
-      </div>
+          <div className="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full transition-all duration-500 ${
+                step.status === 'error'
+                  ? 'bg-red-600'
+                  : step.status === 'completed'
+                  ? 'bg-green-600'
+                  : 'bg-blue-600'
+              }`}
+              style={{ width: `${step.progress}%` }}
+            />
+          </div>
+        </Card>
+      ))}
     </div>
   );
 };
-
-export default AnalysisProcess;
