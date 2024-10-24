@@ -1,0 +1,30 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="researcher-pro",
+    version="0.1.0",
+    packages=find_packages(),
+    install_requires=[
+        "fastapi>=0.68.0,<0.69.0",
+        "uvicorn>=0.15.0,<0.16.0",
+        "sqlalchemy>=1.4.23,<1.5.0",
+        "pydantic>=1.8.0,<2.0.0",
+        "alembic>=1.7.1,<1.8.0",
+        "python-jose[cryptography]>=3.3.0,<3.4.0",
+        "passlib[bcrypt]>=1.7.4,<1.8.0",
+        "python-multipart>=0.0.5,<0.1.0",
+        "psycopg2-binary>=2.9.1,<2.10.0",
+        "redis>=4.0.0,<4.1.0",
+        "websockets>=10.0,<11.0",
+        "python-dotenv>=0.19.0,<0.20.0",
+        "celery>=5.2.0,<5.3.0",
+        "prometheus-client>=0.14.0,<0.15.0",
+        "aiohttp==3.7.4",
+        "pytest>=7.0.0,<7.1.0",
+        "pytest-asyncio>=0.18.0,<0.19.0",
+        "pytest-cov>=3.0.0,<3.1.0",
+        "locust>=2.8.0,<2.9.0",
+        "aioredis>=2.0.0,<2.1.0",
+        "openai>=1.0.0"
+    ],
+)
