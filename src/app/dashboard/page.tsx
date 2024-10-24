@@ -1,11 +1,19 @@
-"use client"
+'use client';
 
-import dynamic from 'next/dynamic'
+import dynamic from 'next/dynamic';
+import { ProtectedRoute } from '../../components/auth/ProtectedRoute';
 
-const Dashboard = dynamic(() => import('@/components/Dashboard/Dashboard'), {
-  ssr: false
-})
+const DashboardComponent = dynamic(
+  () => import('../../components/Dashboard/Dashboard').then((mod) => mod.Dashboard),
+  {
+    ssr: false,
+  }
+);
 
 export default function DashboardPage() {
-  return <Dashboard />
+  return (
+    <ProtectedRoute>
+      <DashboardComponent />
+    </ProtectedRoute>
+  );
 }
