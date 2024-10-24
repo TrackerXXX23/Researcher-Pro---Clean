@@ -1,0 +1,65 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp up load"
+    - duration: 300
+      arrivalRate: 50
+      name: "Sustained load"
+
+scenarios:
+  - name: "Research Analysis Flow"
+    flow:
+      - post:
+          url: "/api/start-analysis"
+          json:
+            topic: "AI Technology Trends"
+            depth: "comprehensive"
+          capture:
+            - json: "$.analysisId"
+              as: "analysisId"
+      - think: 1
+      - get:
+          url: "/api/getAnalysis/{{ analysisId }}"
+      - think: 2
+      - post:
+          url: "/api/process-results"
+          json:
+            analysisId: "{{ analysisId }}"
+            status: "completed"
+
+  - name: "Report Generation"
+    flow:
+      - post:
+          url: "/api/reports"
+          json:
+            type: "research"
+            format: "detailed"
+          capture:
+            - json: "$.reportId"
+              as: "reportId"
+      - think: 1
+      - get:
+          url: "/api/get-report/{{ reportId }}"
+
+metrics:
+  - name: "http.response_time"
+    type: "histogram"
+    buckets: [100, 200, 500, 1000, 2000, 5000]
+  
+  - name: "http.requests"
+    type: "counter"
+    
+  - name: "errors"
+    type: "counter"
+
+plugins:
+  statsd:
+    host: "localhost"
+    port: 8125
+    prefix: "load-test"
