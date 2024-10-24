@@ -1,112 +1,57 @@
-'use client';
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from '../ui/card';
+import { Badge } from '../ui/badge';
 import { ProcessUpdate, getStatusColor } from '../../types/analysis';
-import { authService } from '../../services/authService';
-import { websocketService, WebSocketMessage } from '../../services/websocketService';
+import useWebSocket from '../../hooks/useWebSocket';
 
 interface LiveUpdatesProps {
-  analysisId?: number;
-  onUpdate?: (update: ProcessUpdate) => void;
+  analysisId: string;
 }
 
-export function LiveUpdates({ analysisId, onUpdate }: LiveUpdatesProps) {
-  const [updates, setUpdates] = React.useState<ProcessUpdate[]>([]);
-  const [isConnected, setIsConnected] = React.useState(false);
-
-  React.useEffect(() => {
-    const user = authService.getUser();
-    if (!user) {
-      console.error('LiveUpdates: No user found');
-      return;
+export const LiveUpdates: React.FC<LiveUpdatesProps> = ({ analysisId }) => {
+  const [updates, setUpdates] = useState<ProcessUpdate[]>([]);
+  const { connected } = useWebSocket('analysis_update', (update: ProcessUpdate) => {
+    console.log('LiveUpdates: Received update:', update);
+    if (update.analysisId === analysisId) {
+      setUpdates(prev => [...prev, update]);
     }
+  }, analysisId);
 
-    // Debug: Log connection attempt
-    console.log('LiveUpdates: Connecting to WebSocket:', {
-      userId: user.id,
-      analysisId,
-    });
+  useEffect(() => {
+    // Clear updates when analysis ID changes
+    setUpdates([]);
+  }, [analysisId]);
 
-    const handleMessage = (message: WebSocketMessage) => {
-      console.log('LiveUpdates: Received message:', message);
-
-      if (message.type === 'processUpdate') {
-        const update = message.data;
-        setUpdates((prev) => [...prev, update].slice(-5)); // Keep last 5 updates
-        onUpdate?.(update);
-      }
-    };
-
-    // Connect to WebSocket
-    websocketService.connect(user.id.toString())
-      .then(() => {
-        console.log('LiveUpdates: WebSocket connected');
-        setIsConnected(true);
-        websocketService.addMessageHandler(handleMessage);
-      })
-      .catch((error) => {
-        console.error('LiveUpdates: WebSocket connection error:', error);
-      });
-
-    // Cleanup
-    return () => {
-      console.log('LiveUpdates: Cleaning up WebSocket connection');
-      websocketService.removeMessageHandler(handleMessage);
-      websocketService.disconnect();
-    };
-  }, [analysisId, onUpdate]);
-
-  if (!isConnected) {
+  if (!analysisId) {
     return (
-      <div className="text-center py-4 text-gray-500">
-        Connecting to analysis updates...
-      </div>
-    );
-  }
-
-  if (updates.length === 0) {
-    return (
-      <div className="text-center py-4 text-gray-500">
-        No live updates available
-      </div>
+      <Card className="p-4">
+        <h3 className="text-lg font-semibold mb-4">Live Updates</h3>
+        <p className="text-gray-500">No analysis in progress</p>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-2 mt-4">
-      {updates.map((update, index) => (
-        <Card key={`${update.stepId}-${index}`} className="p-3">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="font-medium">{update.stepId}</p>
-              {update.details && (
-                <p className="text-sm text-gray-500">{update.details}</p>
-              )}
-              {update.error && (
-                <p className="text-sm text-red-500 mt-1">{update.error}</p>
-              )}
-            </div>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(update.status)}`}>
-              {update.status.charAt(0).toUpperCase() + update.status.slice(1)}
-            </span>
+    <Card className="p-4">
+      <h3 className="text-lg font-semibold mb-4">Live Updates</h3>
+      <div className="space-y-2">
+        {!connected && (
+          <div className="text-yellow-600">
+            Connecting to analysis {analysisId}...
           </div>
-          {typeof update.progress === 'number' && (
-            <div className="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full transition-all duration-500 ${
-                  update.status === 'error'
-                    ? 'bg-red-600'
-                    : update.status === 'completed'
-                    ? 'bg-green-600'
-                    : 'bg-blue-600'
-                }`}
-                style={{ width: `${update.progress}%` }}
-              />
-            </div>
-          )}
-        </Card>
-      ))}
-    </div>
+        )}
+        {connected && updates.length === 0 && (
+          <p className="text-gray-500">Waiting for updates...</p>
+        )}
+        {updates.map((update, index) => (
+          <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+            <span className="text-sm">{update.message}</span>
+            <Badge variant={getStatusColor(update.status) as any}>
+              {update.status}
+            </Badge>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
-}
+};
