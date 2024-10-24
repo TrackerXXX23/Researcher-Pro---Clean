@@ -1,0 +1,28 @@
+feat(analysis): Add schema definitions and gitignore
+
+This commit adds the necessary schema definitions for the analysis feature
+and proper gitignore settings.
+
+Added Files:
+- backend/app/schemas/analysis.py: Pydantic models for analysis
+  * AnalysisBase: Common fields
+  * AnalysisCreate: Creation model
+  * AnalysisUpdate: Update model
+  * Analysis: Complete model with all fields
+
+- .gitignore: Project-specific ignore rules
+  * Python artifacts
+  * Node modules
+  * IDE files
+  * Environment files
+  * Project storage files
+
+Schema Details:
+- Proper typing for all fields
+- Optional fields where appropriate
+- Status tracking (pending -> researching -> analyzing -> completed/failed)
+- Progress tracking (0.0 to 1.0)
+- Datetime fields for created_at and updated_at
+- ORM mode enabled for database compatibility
+
+Related to previous commit: Implements schemas for AI analysis pipeline

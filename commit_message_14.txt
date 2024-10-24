@@ -1,0 +1,37 @@
+feat(frontend): Add frontend services and utilities
+
+This commit adds frontend services and utilities:
+
+Service Components:
+1. Analysis Services:
+   - Analysis Service
+   - Research Service
+   - Report Service
+   - Template Service
+
+2. Integration Services:
+   - AI Analysis Service
+   - WebSocket Service
+   - Authentication Service
+   - Collaboration Service
+
+3. Utility Services:
+   - Performance Testing
+   - Data Processing
+   - Cache Management
+   - Socket Management
+
+4. Core Libraries:
+   - Prisma Client
+   - Socket.IO
+   - Event Emitter
+   - Utility Functions
+
+Technical Details:
+- TypeScript services
+- API integration
+- WebSocket handling
+- Data processing
+- Performance optimization
+
+Related to previous commits: Adds frontend services for analysis system

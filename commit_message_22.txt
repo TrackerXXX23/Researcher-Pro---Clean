@@ -1,0 +1,33 @@
+feat(frontend): Add remaining frontend components
+
+This commit adds remaining frontend components:
+
+Components:
+1. Styles:
+   - Animation styles
+   - Component styles
+   - Global styles
+
+2. Interfaces:
+   - Type definitions
+   - Common interfaces
+   - Shared types
+
+3. Testing:
+   - Cypress configuration
+   - E2E tests
+   - Test utilities
+
+4. Environment:
+   - Next.js types
+   - Environment setup
+   - Type declarations
+
+Technical Details:
+- CSS animations
+- TypeScript interfaces
+- E2E testing
+- Environment config
+- Type definitions
+
+Related to previous commits: Completes frontend components

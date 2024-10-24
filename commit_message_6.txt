@@ -1,0 +1,28 @@
+feat(schemas): Add additional schema definitions
+
+This commit adds schema definitions for various components:
+
+Schema Definitions:
+1. Token Schema:
+   - JWT token structure
+   - Token validation rules
+
+2. Research Schema:
+   - Research request/response models
+   - Research parameters
+
+3. Template Schema:
+   - Analysis templates
+   - Template parameters
+
+4. Report Schema:
+   - Report generation models
+   - Report formatting rules
+
+Technical Details:
+- Pydantic models
+- Type validation
+- Schema relationships
+- Documentation
+
+Related to previous commits: Completes schema definitions for analysis system

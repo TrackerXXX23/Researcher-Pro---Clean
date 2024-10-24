@@ -1,0 +1,36 @@
+feat(api): Add API endpoints and routers
+
+This commit adds API endpoints and routers:
+
+API Components:
+1. Main Router:
+   - Route configuration
+   - Endpoint organization
+
+2. Research API:
+   - Research endpoints
+   - Data collection routes
+
+3. Template API:
+   - Template management
+   - Template customization
+
+4. Report API:
+   - Report generation
+   - Report retrieval
+
+5. Auth API:
+   - Authentication endpoints
+   - User management
+
+6. WebSocket API:
+   - Real-time updates
+   - Progress tracking
+
+Technical Details:
+- FastAPI routers
+- Endpoint documentation
+- Request/response models
+- WebSocket integration
+
+Related to previous commits: Implements API layer for analysis system

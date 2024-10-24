@@ -1,0 +1,31 @@
+feat(core): Add core configuration and environment setup
+
+This commit adds core configuration files for the application:
+
+Core Configuration:
+- Settings management using Pydantic
+- Environment variable handling
+- API key configuration
+- Database settings
+- Redis configuration
+- Security settings
+- CORS configuration
+
+Environment Setup:
+- Example .env file with all required variables
+- Documentation for each setting
+- Secure defaults
+- Type-safe configuration
+
+Technical Details:
+- Pydantic BaseSettings for type validation
+- Environment variable loading with dotenv
+- Secure default values
+- Configuration for:
+  * API keys (OpenAI, Perplexity)
+  * Database connection
+  * Redis cache
+  * Security settings
+  * CORS origins
+
+Related to previous commits: Provides configuration for AI analysis pipeline

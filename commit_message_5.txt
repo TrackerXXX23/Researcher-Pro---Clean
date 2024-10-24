@@ -1,0 +1,37 @@
+feat(core): Add core utilities and middleware
+
+This commit adds core utilities and middleware components:
+
+Core Components:
+1. Cache System:
+   - Redis integration
+   - Cache management utilities
+
+2. Security:
+   - Authentication utilities
+   - Authorization middleware
+   - Token management
+
+3. Dependencies:
+   - Dependency injection utilities
+   - Database session management
+   - Service dependencies
+
+4. Monitoring:
+   - Performance metrics
+   - System monitoring
+   - Resource tracking
+
+5. Task Management:
+   - Background task handling
+   - Task scheduling
+   - Process management
+
+Technical Details:
+- Redis cache implementation
+- JWT authentication
+- Prometheus metrics
+- FastAPI dependencies
+- Background workers
+
+Related to previous commits: Provides core infrastructure for AI analysis pipeline

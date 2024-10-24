@@ -1,0 +1,47 @@
+feat(analysis): Implement AI-powered market analysis pipeline
+
+This commit implements a comprehensive AI-powered market analysis system that
+combines Perplexity API for research and OpenAI API for structured analysis.
+
+Key Features:
+- Integrated Perplexity API using llama-3.1-sonar-huge-128k-online model
+- OpenAI GPT-4 Turbo for structured analysis and insights
+- RESTful API endpoints for analysis management
+- Persistent storage with JSON serialization
+- Background task processing for async operations
+- Detailed progress tracking and status updates
+
+Technical Details:
+- AI Service:
+  * Perplexity API for market research with structured prompts
+  * OpenAI API for JSON-formatted analysis
+  * Error handling and logging for API calls
+
+- Analysis API:
+  * RESTful endpoints for CRUD operations
+  * File-based persistence with datetime handling
+  * Background task processing using asyncio
+  * Progress tracking (0% -> 25% -> 50% -> 100%)
+
+- Documentation:
+  * Current implementation status
+  * API usage examples
+  * Next steps and known issues
+  * Environment setup guide
+
+Testing:
+- Verified API endpoints functionality
+- Tested AI service integration
+- Confirmed persistence across server restarts
+- Validated JSON serialization fixes
+
+Next Steps:
+1. Add WebSocket support for real-time updates
+2. Implement frontend visualization components
+3. Add error retry mechanism
+4. Implement rate limiting
+5. Add API key validation
+
+Breaking Changes: None
+
+Related Issues: None

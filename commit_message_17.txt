@@ -1,0 +1,30 @@
+feat(pages): Add Next.js pages and layouts
+
+This commit adds Next.js pages and layouts:
+
+Components:
+1. App Layout:
+   - Root layout
+   - Global styles
+   - Navigation
+
+2. Pages:
+   - Dashboard page
+   - History page
+   - Login page
+   - Signup page
+   - Test pages
+
+3. Styles:
+   - Global CSS
+   - Layout styles
+   - Page-specific styles
+
+Technical Details:
+- Next.js 13 App Router
+- Layout components
+- Page components
+- Route groups
+- Global styles
+
+Related to previous commits: Adds page structure for frontend system

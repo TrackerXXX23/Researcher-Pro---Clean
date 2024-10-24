@@ -1,0 +1,38 @@
+feat(scripts): Add development and utility scripts
+
+This commit adds development and utility scripts:
+
+Script Components:
+1. Development Scripts:
+   - Setup script
+   - Environment verification
+   - Development utilities
+
+2. Documentation Scripts:
+   - Documentation generation
+   - API documentation
+   - Script documentation
+
+3. Database Scripts:
+   - Database management
+   - Migration utilities
+   - Backup scripts
+
+4. Monitoring Scripts:
+   - System monitoring
+   - Performance tracking
+   - Resource monitoring
+
+5. Configuration Scripts:
+   - Environment setup
+   - Virtual environment management
+   - Git hooks
+
+Technical Details:
+- Shell scripts
+- Python utilities
+- Documentation tools
+- Monitoring utilities
+- Configuration management
+
+Related to previous commits: Adds development tooling for analysis system

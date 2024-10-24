@@ -1,0 +1,33 @@
+feat(database): Add database models and session management
+
+This commit adds the database infrastructure and models:
+
+Database Infrastructure:
+- SQLAlchemy base class setup
+- Database session management
+- Connection pooling configuration
+- Dependency injection for database sessions
+
+Models:
+1. Analysis Model:
+   - Basic fields (title, description, topic)
+   - Status tracking (pending -> researching -> analyzing -> completed)
+   - Progress tracking (0.0 to 1.0)
+   - JSON parameters for flexible data storage
+   - Timestamps and user relationship
+
+2. User Model:
+   - Authentication fields
+   - Role management
+   - Relationship with analyses
+   - Timestamps and activity tracking
+
+Technical Details:
+- SQLAlchemy ORM models
+- Automatic table name generation
+- Proper relationship definitions
+- Index optimization
+- Timestamp automation
+- Type hints and documentation
+
+Related to previous commits: Provides database structure for AI analysis pipeline

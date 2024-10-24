@@ -1,0 +1,35 @@
+feat(frontend): Add frontend components
+
+This commit adds frontend components:
+
+Component Groups:
+1. Dashboard Components:
+   - Analysis Builder
+   - Research Process Manager
+   - Live Updates
+   - Report History
+   - Generated Reports
+
+2. Authentication Components:
+   - Login Form
+   - Signup Form
+   - Protected Route
+   - Auth Tests
+
+3. UI Components:
+   - Button
+   - Card
+   - Toast
+   - Progress
+   - Alert
+   - Input
+   - Checkbox
+
+Technical Details:
+- React components
+- TypeScript definitions
+- Tailwind styling
+- Component tests
+- Accessibility support
+
+Related to previous commits: Adds frontend UI for analysis system
